@@ -1,0 +1,228 @@
+{
+  "info": {
+    "_postman_id": "b3f2a6b0-6a4e-4a7e-9f7a-gym-booking-collection",
+    "name": "Gym Booking Service - Actividad 6",
+    "description": "Coleccion con los 6 escenarios de prueba (Parte E), organizada en 3 carpetas por rol. Cada carpeta usa Authorization tipo OAuth 2.0 (Password Credentials) con Client ID/Client Secret ya cargados; solo debes entrar a cada carpeta, pestana Authorization, y darle 'Get New Access Token' -> 'Use Token' una vez por carpeta.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "keycloak_url", "value": "http://localhost:8280", "type": "string" },
+    { "key": "realm", "value": "gym-system", "type": "string" },
+    { "key": "client_id", "value": "gym-app", "type": "string" },
+    { "key": "client_secret", "value": "", "type": "string" },
+    { "key": "gateway_url", "value": "http://localhost:8090", "type": "string" },
+    { "key": "member_username", "value": "member.test", "type": "string" },
+    { "key": "member_password", "value": "", "type": "string" },
+    { "key": "trainer_username", "value": "trainer.test", "type": "string" },
+    { "key": "trainer_password", "value": "", "type": "string" },
+    { "key": "admin_username", "value": "admin.test", "type": "string" },
+    { "key": "admin_password", "value": "", "type": "string" },
+    { "key": "booking_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. MEMBER",
+      "description": "Paso 1: entra aqui, pestana Authorization (a nivel de carpeta) -> Get New Access Token -> Use Token. Los requests de adentro heredan ese token automaticamente.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          { "key": "tokenName", "value": "member-token", "type": "string" },
+          { "key": "grant_type", "value": "password_credentials", "type": "string" },
+          { "key": "username", "value": "{{member_username}}", "type": "string" },
+          { "key": "password", "value": "{{member_password}}", "type": "string" },
+          { "key": "accessTokenUrl", "value": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token", "type": "string" },
+          { "key": "clientId", "value": "{{client_id}}", "type": "string" },
+          { "key": "clientSecret", "value": "{{client_secret}}", "type": "string" },
+          { "key": "scope", "value": "", "type": "string" },
+          { "key": "client_authentication", "value": "body", "type": "string" },
+          { "key": "addTokenTo", "value": "header", "type": "string" },
+          { "key": "tokenType", "value": "Bearer", "type": "string" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Escenario 1. Crear reserva -> 201 Created",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trainerUsername\": \"{{trainer_username}}\",\n  \"className\": \"Spinning\",\n  \"classDate\": \"2026-08-01T10:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/bookings",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "bookings"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });",
+                  "pm.test('memberUsername viene del token', function () {",
+                  "  pm.expect(pm.response.json().memberUsername).to.eql(pm.collectionVariables.get('member_username'));",
+                  "});",
+                  "pm.collectionVariables.set('booking_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Escenario 2. Ver todas las reservas -> 403 Forbidden",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway_url}}/api/bookings",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "bookings"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 Forbidden', function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. TRAINER",
+      "description": "Paso 2: entra aqui, pestana Authorization (a nivel de carpeta) -> Get New Access Token -> Use Token.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          { "key": "tokenName", "value": "trainer-token", "type": "string" },
+          { "key": "grant_type", "value": "password_credentials", "type": "string" },
+          { "key": "username", "value": "{{trainer_username}}", "type": "string" },
+          { "key": "password", "value": "{{trainer_password}}", "type": "string" },
+          { "key": "accessTokenUrl", "value": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token", "type": "string" },
+          { "key": "clientId", "value": "{{client_id}}", "type": "string" },
+          { "key": "clientSecret", "value": "{{client_secret}}", "type": "string" },
+          { "key": "scope", "value": "", "type": "string" },
+          { "key": "client_authentication", "value": "body", "type": "string" },
+          { "key": "addTokenTo", "value": "header", "type": "string" },
+          { "key": "tokenType", "value": "Bearer", "type": "string" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Escenario 3. Consultar clases propias -> 200 OK",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway_url}}/api/bookings/my-classes",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "bookings", "my-classes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Escenario 5. Marcar reserva como asistida -> 200 OK",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{gateway_url}}/api/bookings/{{booking_id}}/attend",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "bookings", "{{booking_id}}", "attend"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Estado paso a ATTENDED', function () {",
+                  "  pm.expect(pm.response.json().status).to.eql('ATTENDED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. ADMIN",
+      "description": "Paso 3: entra aqui, pestana Authorization (a nivel de carpeta) -> Get New Access Token -> Use Token.",
+      "auth": {
+        "type": "oauth2",
+        "oauth2": [
+          { "key": "tokenName", "value": "admin-token", "type": "string" },
+          { "key": "grant_type", "value": "password_credentials", "type": "string" },
+          { "key": "username", "value": "{{admin_username}}", "type": "string" },
+          { "key": "password", "value": "{{admin_password}}", "type": "string" },
+          { "key": "accessTokenUrl", "value": "{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token", "type": "string" },
+          { "key": "clientId", "value": "{{client_id}}", "type": "string" },
+          { "key": "clientSecret", "value": "{{client_secret}}", "type": "string" },
+          { "key": "scope", "value": "", "type": "string" },
+          { "key": "client_authentication", "value": "body", "type": "string" },
+          { "key": "addTokenTo", "value": "header", "type": "string" },
+          { "key": "tokenType", "value": "Bearer", "type": "string" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Escenario 4. Consultar todas las reservas -> 200 OK",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{gateway_url}}/api/bookings",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "bookings"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Escenario 6. Eliminar reserva -> 204 No Content",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{gateway_url}}/api/bookings/{{booking_id}}",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "bookings", "{{booking_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('204 No Content', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
